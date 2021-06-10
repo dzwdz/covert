@@ -1,23 +1,16 @@
 #include "helpers.h"
+#include "types.h"
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
-struct perms {
-	const char *exe;
-	const char *group;
-};
-
-const struct perms perms[] = {
-	{"/bin/id", "floppy"},
-	{"/bin/capsh", "scanner"},
-	NULL
-};
+#include "config.h"
 
 gid_t groups[NGROUPS_MAX];
 int groups_amt;
+
 
 void add_group(gid_t gid) {
 	if (groups_amt > NGROUPS_MAX) die("too many groups\n");
