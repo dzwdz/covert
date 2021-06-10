@@ -2,7 +2,7 @@ PREFIX = /usr/local
 CC = cc
 CFLAGS = -Wall -Wextra -Wno-missing-braces -pedantic -Os
 
-covert: main.c helpers.c config.h
+covert: main.c config.h
 	gcc -o $@ $^ ${CFLAGS}
 
 config.h: 
