@@ -25,8 +25,7 @@ void push_group(const char *name) {
 	if (groups_amt > NGROUPS_MAX)
 		DIE("you've hit the group limit\n");
 
-	fp = fopen("/etc/group", "r");
-	if (fp == NULL)
+	if (!(fp = fopen("/etc/group", "r")))
 		DIE("couldn't open /etc/group\n");
 
 	while ((read = getline(&line, &len, fp)) != -1) {
@@ -74,10 +73,9 @@ void apply_config(const char *program) {
 
 int main(int argc, char *const *argv) {
 	if (argc < 2) {
-		printf("usage: covert2 command [argv]\n\n" \
-		       "Please use the 'covert' wrapper instead, this program wasn't " \
-		       "intended to be run directly by end users.\n");
-		return 1;
+		DIE("usage: covert2 command [argv]\n\n" \
+		    "Please use the 'covert' wrapper instead, this program wasn't " \
+		    "intended to be run directly by end users.\n");
 	}
 
 	if ((groups_amt = getgroups(NGROUPS_MAX, groups)) < 0)
@@ -91,6 +89,5 @@ int main(int argc, char *const *argv) {
 	}
 
 	execv(argv[1], &argv[2]);
-
 	DIE("execv() call failed\n");
 }
