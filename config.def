@@ -1,0 +1,6 @@
+# path        groups to add
+
+	
+/bin/id  	floppy,tape,cdrom
+/bin/capsh	scanner
+
