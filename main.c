@@ -1,3 +1,4 @@
+#include <grp.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,35 +12,22 @@
 gid_t groups[NGROUPS_MAX];
 int groups_amt;
 
-void push_group(const char *name);
+gid_t find_group(const char *name);
+void push_group(gid_t gid);
 void apply_config();
 
 
-// finds a group by name and pushes it to the end of groups[]
-void push_group(const char *name) {
-	FILE *fp;
-	char *line = NULL, *token = NULL;
-	size_t len = 0;
-	ssize_t read;
+gid_t find_group(const char *name) {
+	struct group *grp = getgrnam(name);
+	if (!grp) DIE("%s isn't a valid group.\n", name);
+	return grp->gr_gid;
+}
 
-	if (groups_amt > NGROUPS_MAX)
+void push_group(gid_t gid) {
+	if (groups_amt >= NGROUPS_MAX)
 		DIE("you've hit the group limit\n");
 
-	if (!(fp = fopen("/etc/group", "r")))
-		DIE("couldn't open /etc/group\n");
-
-	while ((read = getline(&line, &len, fp)) != -1) {
-		token = strtok(line, ":");
-		if (strcmp(token, name) == 0) {
-			token = strtok(NULL, ":");
-			token = strtok(NULL, ":");
-			groups[groups_amt++] = atoi(token);
-			fclose(fp);
-			return;
-		}
-	}
-
-	DIE("\"%s\" isn't present in /etc/group\n", name);
+	groups[groups_amt++] = gid;
 }
 
 void apply_config(const char *program) {
@@ -62,7 +50,7 @@ void apply_config(const char *program) {
 
 			group = strtok_r(column, ",", &saveptr2);
 			while (group != NULL) {
-				push_group(group);
+				push_group(find_group(group));
 				group = strtok_r(NULL, ",", &saveptr2);
 			}
 		}
