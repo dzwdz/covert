@@ -1,3 +1,4 @@
+#include "locale.h"
 #include <grp.h>
 #include <limits.h>
 #include <stdbool.h>
@@ -30,14 +31,12 @@ bool is_in_group(gid_t gid) {
 
 gid_t find_group(const char *name) {
 	struct group *grp = getgrnam(name);
-	if (!grp) DIE("%s isn't a valid group.\n", name);
+	if (!grp) DIE(ERR_badgroup, name);
 	return grp->gr_gid;
 }
 
 void push_group(gid_t gid) {
-	if (new_groupamt >= NGROUPS_MAX)
-		DIE("you've hit the group limit\n");
-
+	if (new_groupamt >= NGROUPS_MAX) DIE(ERR_ngroups);
 	groups[new_groupamt++] = gid;
 }
 
@@ -53,8 +52,7 @@ void apply_rule(char *rule, const char *program, size_t line_no) {
 
 	// second column - groups that are allowed to elevate themselves
 	column = strtok_r(NULL, WHITESPACE, &sp1);
-	if (!column)
-		DIE("syntax error @ %s:%ld\n", CONFIG_PATH, line_no);
+	if (!column) DIE(ERR_syntax, CONFIG_PATH, line_no);
 
 	group = strtok_r(column, ",", &sp2);
 	while (group != NULL && !privileged) {
@@ -67,8 +65,7 @@ void apply_rule(char *rule, const char *program, size_t line_no) {
 
 	// third column - groups to add to the program
 	column = strtok_r(NULL, WHITESPACE, &sp1);
-	if (!column)
-		DIE("syntax error @ %s:%ld\n", CONFIG_PATH, line_no);
+	if (!column) DIE(ERR_syntax, CONFIG_PATH, line_no);
 
 	group = strtok_r(column, ",", &sp2);
 	while (group != NULL) {
@@ -83,7 +80,7 @@ void apply_config(const char *program) {
 	size_t buflen = 0, line_no = 0;
 
 	if (!(fp = fopen(CONFIG_PATH, "r")))
-		DIE("couldn't read " CONFIG_PATH "\n");
+		DIE(ERR_fopen, CONFIG_PATH);
 
 	while (getline(&buf, &buflen, fp) != -1)
 		apply_rule(buf, program, ++line_no);
@@ -92,23 +89,17 @@ void apply_config(const char *program) {
 }
 
 int main(int argc, char *const *argv) {
-	if (argc < 2) {
-		DIE("usage: covert2 command [argv]\n\n" \
-		    "Please use the 'covert' wrapper instead, this program wasn't " \
-		    "intended to be run directly by end users.\n");
-	}
+	if (argc < 2)
+		DIE(ERR_argc);
 
-	if ((og_groupamt = getgroups(NGROUPS_MAX, groups)) < 0)
-		DIE("getgroups() call failed\n");
-	new_groupamt = og_groupamt;
+	new_groupamt = og_groupamt = getgroups(NGROUPS_MAX, groups);
+	if (og_groupamt < 0) DIE(ERR_getgroups);
 	
 	apply_config(argv[1]);
 
-	if (setgroups(new_groupamt, groups) < 0) {
-		DIE("covert: Unable to set the supplementary GIDs. "
-		    "Is the binary privileged?\n");
-	}
+	if (setgroups(new_groupamt, groups) < 0)
+		DIE(ERR_setgroups);
 
 	execv(argv[1], &argv[2]);
-	DIE("execv() call failed\n");
+	DIE(ERR_exec);
 }
