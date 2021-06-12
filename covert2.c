@@ -45,7 +45,6 @@ void apply_config(const char *program) {
 	char *saveptr1, *saveptr2;
 	size_t len = 0, line_no = 0;
 	ssize_t read;
-	bool allowed;
 
 	if (!(fp = fopen(CONFIG_PATH, "r")))
 		DIE("couldn't read " CONFIG_PATH "\n");
@@ -63,18 +62,17 @@ void apply_config(const char *program) {
 		if (!column)
 			DIE("syntax error @ %s:%ld\n", CONFIG_PATH, line_no);
 
-		allowed = false;
 		group = strtok_r(column, ",", &saveptr2);
 		while (group != NULL) {
-			if (*group == '*' || is_in_group(find_group(group))) {
-				allowed = true;
-				break;
-			}
+			if (*group == '*' || is_in_group(find_group(group)))
+				goto allowed;
+
 			group = strtok_r(NULL, ",", &saveptr2);
 		}
-		if (!allowed) continue;
+		continue;
 
 		// third column - groups to add to the program
+allowed:
 		column = strtok_r(NULL, " \t\n", &saveptr1);
 		if (!column)
 			DIE("syntax error @ %s:%ld\n", CONFIG_PATH, line_no);
