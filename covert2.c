@@ -15,29 +15,31 @@
 gid_t groups[NGROUPS_MAX];
 int og_groupamt, new_groupamt;
 
-bool is_in_group(gid_t gid);
-gid_t find_group(const char *name);
-void push_group(gid_t gid);
+bool is_in_group(const char *group);
+gid_t find_group(const char *group);
+void push_group (const char *group);
+
 void apply_rule(char *rule, const char *program, size_t line_no);
 void apply_config();
 
 
-bool is_in_group(gid_t gid) {
+bool is_in_group(const char *group) {
+	gid_t gid = find_group(group);
 	for (int i = 0; i < og_groupamt; i++) {
 		if (groups[i] == gid) return true;
 	}
 	return false;
 }
 
-gid_t find_group(const char *name) {
-	struct group *grp = getgrnam(name);
-	if (!grp) DIE(ERR_badgroup, name);
+gid_t find_group(const char *group) {
+	struct group *grp = getgrnam(group);
+	if (!grp) DIE(ERR_badgroup, group);
 	return grp->gr_gid;
 }
 
-void push_group(gid_t gid) {
+void push_group(const char *group) {
 	if (new_groupamt >= NGROUPS_MAX) DIE(ERR_ngroups);
-	groups[new_groupamt++] = gid;
+	groups[new_groupamt++] = find_group(group);
 }
 
 void apply_rule(char *rule, const char *program, size_t line_no) {
@@ -57,7 +59,7 @@ void apply_rule(char *rule, const char *program, size_t line_no) {
 	group = strtok_r(column, ",", &sp2);
 	while (group != NULL && !privileged) {
 		privileged |= (*group == '*') // * is a catchall "group"
-		           || is_in_group(find_group(group));
+		           || is_in_group(group);
 
 		group = strtok_r(NULL, ",", &sp2);
 	}
@@ -69,7 +71,7 @@ void apply_rule(char *rule, const char *program, size_t line_no) {
 
 	group = strtok_r(column, ",", &sp2);
 	while (group != NULL) {
-		push_group(find_group(group));
+		push_group(group);
 		group = strtok_r(NULL, ",", &sp2);
 	}
 }
