@@ -67,7 +67,6 @@ void apply_config(const char *program) {
 		group = strtok_r(column, ",", &saveptr2);
 		while (group != NULL) {
 			if (*group == '*' || is_in_group(find_group(group))) {
-				printf("%s\n", group);
 				allowed = true;
 				break;
 			}
