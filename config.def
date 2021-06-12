@@ -1,6 +1,4 @@
-# path        groups to add
-
-	
-/bin/id  	floppy,tape,cdrom
-/bin/capsh	scanner
-
+# path    	 permitted groups	 groups to add
+/bin/id   	dzwdz,wheel      	floppy,tape
+/bin/capsh	wheel            	cdrom
+/bin/capsh	*                	scanner
