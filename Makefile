@@ -8,11 +8,14 @@ covert2: main.c
 clean:
 	rm covert2
 
-install: covert covert2
+/etc/covert:
+	cp config.def $@
+	chown root:root $@
+	chmod 644 $@
+
+install: covert covert2 /etc/covert
 	cp -f covert ${PREFIX}/bin
 	cp -f covert2 ${PREFIX}/bin
-# TODO?
-	cp config.def /etc/covert
 	setcap CAP_SETGID+ep /usr/local/bin/covert2
 
 uninstall:
